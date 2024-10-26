@@ -10,6 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o tunecraft .
 
 FROM alpine
 
+
 WORKDIR /app
 
 RUN apk add --no-cache youtube-dl ffmpeg

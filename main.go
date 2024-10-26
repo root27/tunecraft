@@ -9,10 +9,6 @@ import (
 	"os/exec"
 )
 
-/* const (
-	outputFile = "output.mp3"
-) */
-
 func homePage(w http.ResponseWriter, r *http.Request) {
 
 	html := `
@@ -103,7 +99,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 			<h1>TuneCraft: YouTube to MP3 Converter</h1>
 	<div class="container">
 			<form id="formaction">
-				<label for="url">Enter YouTube ID:</label>
+				<label for="url">Enter YouTube Video ID or Url:</label>
 				<input type="text" id="url" name="url" required>
 				<input type="submit" value="Convert to MP3">
 			</form>
@@ -114,11 +110,16 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 				e.preventDefault();
 				const id = document.getElementById("url").value;
-
-				if (id) {
+					
+				if (id.includes("youtube.com")) {
+					
+					newId = id.split("v=")[1];
+					window.location.href = "/download?id=" + newId;
+	
+				} else {
 					window.location.href = "/download?id=" + id;
 				}
-		
+
 			});
 			</script>
 		</body>
@@ -136,9 +137,9 @@ func main() {
 
 	http.HandleFunc("/download", download)
 
-	fmt.Println("Server starting at 10000")
+	fmt.Println("Server starting at port 9095")
 
-	log.Fatal(http.ListenAndServe(":10000", nil))
+	log.Fatal(http.ListenAndServe(":9095", nil))
 
 }
 
@@ -166,6 +167,7 @@ func downloadAndExtractMp3(id string, output http.ResponseWriter) error {
 	go func() {
 		defer ytdlWrite.Close()
 		ytdl.Run()
+
 	}()
 
 	go func() {
