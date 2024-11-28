@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+
+	"encoding/json"
 )
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +149,32 @@ func downloadAndExtractMp3(id string, output http.ResponseWriter) error {
 
 	url := fmt.Sprintf("https://www.youtube.com/watch?v=%s", id)
 
+	callUrl := fmt.Sprintf("https://noembed.com/embed?url=%s", url)
+
+	callRes, err := http.Get(callUrl)
+
+	if err != nil {
+
+		return err
+
+	}
+
+	resBody, err := io.ReadAll(callRes.Body)
+
+	if err != nil {
+
+		log.Printf("Error reading body: %+v", err)
+
+		return err
+
+	}
+
+	defer callRes.Body.Close()
+
+	var out map[string]interface{}
+
+	_ = json.Unmarshal(resBody, &out)
+
 	// Create pipes for communication
 	ytdlRead, ytdlWrite := io.Pipe()
 	ffmpegRead, ffmpegWrite := io.Pipe()
@@ -162,7 +190,7 @@ func downloadAndExtractMp3(id string, output http.ResponseWriter) error {
 	ffmpeg.Stderr = os.Stderr
 
 	output.Header().Set("Content-Type", "audio/mpeg")
-	output.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.mp3", id))
+	output.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.mp3", out["title"]))
 
 	go func() {
 		defer ytdlWrite.Close()
@@ -175,7 +203,7 @@ func downloadAndExtractMp3(id string, output http.ResponseWriter) error {
 		ffmpeg.Run()
 	}()
 
-	_, err := io.Copy(output, ffmpegRead)
+	_, err = io.Copy(output, ffmpegRead)
 	if err != nil {
 		return err
 	}
