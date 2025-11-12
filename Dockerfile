@@ -13,11 +13,7 @@ FROM alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache youtube-dl ffmpeg
-
 
 COPY --from=builder /go-app/tunecraft .
 
 ENTRYPOINT ["/app/tunecraft"]
-
-
